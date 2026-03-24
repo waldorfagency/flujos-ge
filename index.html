@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flujos de Comunicación — Grupo Educación</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080808;
+    --surface: #111111;
+    --border: #2a2a2a;
+    --text: #f0ede6;
+    --muted: #999;
+    --accent-ge:   #c8a96e;
+    --accent-ra:   #6eadc8;
+    --accent-fj:   #e8802a;
+    --accent-hb:   #6ec8a0;
+    --accent-bi:   #c8896e;
+    --accent-tic:  #8e6ec8;
+    --accent-th:   #c8c26e;
+    --accent-rse:  #6ec8c8;
+    --accent-com:  #d46eb0;
+    --accent-otro: #aaaaaa;
+    --green:       #4caf72;
+    --red:         #c86e6e;
+    --blue:        #6eadc8;
+    --canal:       #e8c97a;
+    --dept:        #7ac4e8;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.5;
+  }
+
+  /* ── HEADER ── */
+  header {
+    width: 100%;
+    max-width: 960px;
+    padding: 52px 40px 0;
+  }
+
+  .header-label {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: clamp(20px, 3vw, 32px);
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  /* ── TABS ── */
+  .tabs-wrap {
+    width: 100%;
+    max-width: 960px;
+    padding: 28px 40px 0;
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-top: 28px;
+  }
+
+  .tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 24px 14px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    margin-bottom: -1px;
+    white-space: nowrap;
+  }
+
+  .tab:hover { color: var(--text); }
+
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--green);
+  }
+
+  .tab-num {
+    color: var(--green);
+    margin-right: 8px;
+  }
+
+  /* ── FLOW PANEL ── */
+  .panel {
+    display: none;
+    width: 100%;
+    max-width: 960px;
+    padding: 0 40px 80px;
+  }
+  .panel.active { display: block; }
+
+  /* ── START BUTTON ── */
+  .start-wrap {
+    display: flex;
+    justify-content: flex-start;
+    padding: 32px 0 8px;
+  }
+
+  .start-btn {
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px 36px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .start-btn:hover { background: var(--green); color: #000; }
+  .start-btn.hidden { display: none; }
+
+  .restart-btn {
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px 36px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .restart-btn:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── FLOW ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .flow.visible { opacity: 1; }
+
+  /* ── STEP ── */
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    padding: 22px 0;
+    position: relative;
+  }
+  .step.show { opacity: 1; transform: translateY(0); }
+
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 19px;
+    bottom: -1px;
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+  }
+
+  .step-index {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: border-color 0.4s, color 0.4s;
+  }
+  .step.show .step-index { border-color: var(--green); color: var(--green); }
+
+  .step-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .step-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .step-text {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: clamp(15px, 2vw, 21px);
+    line-height: 1.5;
+    color: var(--text);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .step-note {
+    font-size: 11px;
+    color: #ccc;
+    line-height: 1.6;
+    border-left: 1px solid var(--border);
+    padding-left: 12px;
+  }
+
+  /* ── DRUM ── */
+  .drum-wrapper { display: inline-flex; align-items: center; vertical-align: middle; }
+
+  .drum {
+    display: inline-block;
+    height: 36px;
+    overflow: hidden;
+    border-bottom: 2px solid var(--green);
+    min-width: 80px;
+    vertical-align: middle;
+  }
+
+  .drum-inner {
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.05s linear;
+    will-change: transform;
+  }
+
+  .drum-item {
+    height: 36px;
+    line-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(15px, 2vw, 20px);
+    padding: 0 8px;
+    color: var(--green);
+  }
+
+  .drum-item.c-ge   { color: var(--accent-ge); }
+  .drum-item.c-ra   { color: var(--accent-ra); }
+  .drum-item.c-fj   { color: var(--accent-fj); }
+  .drum-item.c-hb   { color: var(--accent-hb); }
+  .drum-item.c-bi   { color: var(--accent-bi); }
+  .drum-item.c-tic  { color: var(--accent-tic); }
+  .drum-item.c-th   { color: var(--accent-th); }
+  .drum-item.c-rse  { color: var(--accent-rse); }
+  .drum-item.c-com  { color: var(--accent-com); }
+  .drum-item.c-otro { color: var(--accent-otro); }
+  .drum-item.c-canal{ color: var(--canal); }
+  .drum-item.c-dept { color: var(--dept); }
+
+  /* ── INTERACTIVE DEPT SELECTOR ── */
+  .dept-selector {
+    border: 1px solid var(--border);
+    background: #0d0d0d;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .dept-selector-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .dept-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .dept-chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    cursor: pointer;
+    color: var(--muted);
+    background: transparent;
+    transition: all 0.18s;
+    user-select: none;
+  }
+
+  .dept-chip:hover { border-color: var(--dept); color: var(--dept); }
+
+  .dept-chip.selected {
+    border-color: var(--dept);
+    color: #000;
+    background: var(--dept);
+  }
+
+  .dept-chip.locked {
+    border-color: var(--green);
+    color: #000;
+    background: var(--green);
+    cursor: default;
+  }
+
+  .dept-selected-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+
+  .dept-selected-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    color: #ddd;
+    line-height: 1.5;
+  }
+
+  .dept-selected-item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--dept);
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+
+  .dept-selected-item .dot.locked { background: var(--green); }
+
+  .dept-validator {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  /* ── DECISION BLOCK ── */
+  .decision-block {
+    border: 1px solid var(--border);
+    background: #0d0d0d;
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .decision-branch { display: flex; flex-direction: column; gap: 6px; }
+
+  .branch-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+  }
+
+  .branch-yes { border-left: 2px solid var(--green); padding-left: 12px; }
+  .branch-no  { border-left: 2px solid var(--red);   padding-left: 12px; }
+
+  .branch-content { font-size: 13px; line-height: 1.6; color: #e0e0e0; }
+
+  /* ── PARALLEL BLOCK ── */
+  .parallel-block {
+    border: 1px solid var(--border);
+    background: #0d0d0d;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .parallel-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .parallel-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .parallel-item {
+    flex: 1;
+    min-width: 150px;
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .parallel-item-name {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .parallel-item-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .parallel-item-validator { font-size: 11px; color: #bbb; margin-top: 3px; }
+
+  .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+  .dot.blue  { background: var(--blue); }
+  .dot.green { background: var(--green); }
+  .dot.canal { background: var(--canal); }
+
+  /* ── FINAL BLOCK ── */
+  .final-block {
+    border: 1px solid #2a2a2a;
+    background: linear-gradient(135deg, #111 0%, #0d0d0d 100%);
+    padding: 22px;
+  }
+
+  .final-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .final-card {
+    flex: 1;
+    min-width: 140px;
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .final-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--green);
+    opacity: 0.7;
+  }
+
+  .final-card-name {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .final-card-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ── STATUS ── */
+  .status-bar {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 0 0 64px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── SUBTABS ── */
+  .subtabs-wrap {
+    width: 100%;
+    max-width: 960px;
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #1e1e1e;
+    background: #0a0a0a;
+  }
+
+  .subtab {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #555;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 9px 18px 12px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    margin-bottom: -1px;
+    white-space: nowrap;
+  }
+
+  .subtab:hover { color: var(--muted); }
+  .subtab.active { color: var(--text); border-bottom-color: var(--accent-tic); }
+
+  /* ── MAIN PANELS ── */
+  .main-panel { display: none; width: 100%; max-width: 960px; }
+  .main-panel.active { display: block; }
+
+  .subpanel { display: none; padding: 0 40px 80px; }
+  .subpanel.active { display: block; }
+
+  /* ── ORG NODE CLICK-EXPAND handled via .org-node-drawer in organigrama CSS above ── */
+
+  @media (max-width: 600px) {
+    header, .tabs-wrap, .subtabs-wrap, .main-panel { padding-left: 20px; padding-right: 20px; }
+    .subtabs-wrap { padding-left: 20px; padding-right: 20px; }
+    .subpanel { padding-left: 20px; padding-right: 20px; }
+    .decision-block { grid-template-columns: 1fr; }
+    .tab { padding: 10px 12px 14px; font-size: 10px; }
+  } */
+  /* ── ORGANIGRAMA ── */
+  #org-root {
+    padding: 52px 40px 80px;
+    width: 100%;
+    max-width: 960px;
+  }
+
+  .org-intro { margin-bottom: 40px; }
+  .org-intro-label { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .org-intro-title { font-family: 'Fraunces', serif; font-weight: 300; font-size: clamp(18px,2.5vw,26px); color: var(--text); margin-bottom: 10px; }
+  .org-intro-note { font-size: 11px; color: #aaa; line-height: 1.7; border-left: 1px solid var(--border); padding-left: 12px; max-width: 600px; }
+
+  /* Legend */
+  .org-legend { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 32px; }
+  .org-legend-item { display: flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .org-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .ld-dir   { background: var(--green); }
+  .ld-int   { background: var(--accent-com); }
+  .ld-mkt   { background: var(--canal); }
+  .ld-field { background: var(--accent-ra); }
+  .ld-ext   { background: var(--accent-tic); }
+
+  /* Director */
+  .org-director-wrap { display: flex; justify-content: center; margin-bottom: 0; }
+  .org-director-node {
+    border: 1px solid var(--green);
+    background: #0a140a;
+    padding: 16px 32px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    min-width: 280px;
+    position: relative;
+  }
+  .org-director-label { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: var(--green); text-align: center; }
+  .org-director-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
+
+  /* Connector from director to pillars */
+  .org-connector-v {
+    width: 1px; height: 28px;
+    background: var(--border);
+    margin: 0 auto;
+  }
+  .org-connector-h-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 0;
+    position: relative;
+  }
+  .org-connector-h-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: calc(16.67% + 10px); right: calc(16.67% + 10px);
+    height: 1px;
+    background: var(--border);
+  }
+  .org-pillar-connector {
+    display: flex; justify-content: center;
+    padding-top: 0;
+  }
+  .org-pillar-connector::before {
+    content: '';
+    display: block;
+    width: 1px; height: 20px;
+    background: var(--border);
+  }
+
+  /* Pillars */
+  .org-pillars {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .org-pillar { border: 1px solid var(--border); background: #0d0d0d; display: flex; flex-direction: column; }
+  .org-pillar-header {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .org-pillar-num { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .org-pillar-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 13px; color: var(--text); }
+  .org-pillar-sub { font-size: 9px; color: var(--muted); letter-spacing: 0.06em; margin-top: 1px; }
+  .org-pillar-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+  /* Nodes */
+  .org-node {
+    padding: 9px 11px 9px 14px;
+    border: 1px solid var(--border);
+    background: #0a0a0a;
+    display: flex; flex-direction: column; gap: 2px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .org-node:hover { background: #131313; border-color: #3a3a3a; }
+  .org-node.expanded { border-color: #3a3a3a; background: #101010; }
+
+  .org-node-accent {
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .acc-dir   { background: var(--green); }
+  .acc-int   { background: var(--accent-com); }
+  .acc-mkt   { background: var(--canal); }
+  .acc-field { background: var(--accent-ra); }
+  .acc-ext   { background: var(--accent-tic); }
+
+  .org-node-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .org-node-text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .org-node-label { font-size: 11px; color: var(--text); font-family: 'DM Mono', monospace; letter-spacing: 0.03em; line-height: 1.3; }
+  .org-node-sub { font-size: 9px; color: #666; letter-spacing: 0.08em; text-transform: uppercase; }
+  .org-node-chevron { font-size: 9px; color: #444; flex-shrink: 0; margin-top: 2px; transition: color 0.2s, transform 0.2s; line-height: 1; }
+  .org-node.expanded .org-node-chevron { color: var(--green); transform: rotate(180deg); }
+
+  /* Drawer */
+  .org-node-drawer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    opacity: 0;
+    font-size: 10px;
+    color: #888;
+    line-height: 1.7;
+    border-top: 0px solid transparent;
+  }
+  .org-node.expanded .org-node-drawer {
+    max-height: 200px;
+    opacity: 1;
+    padding-top: 8px;
+    border-top: 1px solid #1e1e1e;
+    margin-top: 6px;
+  }
+
+  .org-group-label {
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #444; padding: 8px 0 2px;
+  }
+
+  /* Waldorf */
+  .org-waldorf-section {
+    margin-top: 8px;
+    border: 1px dashed #2a2a3a;
+    padding: 16px 18px;
+    background: #08080f;
+    position: relative;
+  }
+  .org-waldorf-section::before {
+    content: '';
+    position: absolute;
+    top: -28px; left: 50%;
+    width: 1px; height: 28px;
+    background: #2a2a3a;
+  }
+  .org-waldorf-top { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .org-waldorf-badge {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 13px;
+    color: var(--accent-tic); border: 1px solid var(--accent-tic); padding: 4px 10px;
+  }
+  .org-waldorf-desc { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .org-waldorf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 5px; }
+  .org-waldorf-chip {
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent-tic); border: 1px solid #20203a; padding: 5px 9px;
+    background: #0a0a18;
+  }
+
+  /* Verticales */
+  .org-verticales-section {
+    margin-top: 32px;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+  .org-verticales-label {
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: #444; margin-bottom: 14px;
+  }
+  .org-verticales-grid {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .org-vertical-chip {
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid; padding: 6px 12px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .org-vertical-chip.active { border-color: #3a3a3a; color: var(--text); background: #0d0d0d; }
+  .org-vertical-chip.inactive { border-color: #1e1e1e; color: #333; background: transparent; }
+  .org-vertical-sub { font-size: 8px; letter-spacing: 0.08em; color: #555; }
+  .org-vertical-chip.inactive .org-vertical-sub { color: #2a2a2a; }
+
+  /* Decisions note */
+  .org-decisions {
+    margin-top: 28px;
+    font-size: 10px; color: #444; line-height: 1.9;
+    border-left: 1px solid #1e1e1e; padding-left: 12px;
+  }
+  .org-decisions strong { color: #666; font-weight: 500; }
+
+  @media (max-width: 720px) {
+    .org-pillars, .org-connector-h-wrap { grid-template-columns: 1fr; }
+    .org-connector-h-wrap::before { display: none; }
+    #org-root { padding: 20px 20px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Grupo Educación — Comunicación, Marketing y Ventas</div>
+  <h1>Estructura y flujos operativos</h1>
+</header>
+
+<div class="tabs-wrap">
+  <button class="tab active" onclick="switchMain(0)"><span class="tab-num">01</span>Organigrama actual</button>
+  <button class="tab" onclick="switchMain(1)"><span class="tab-num">02</span>Organigrama ideal</button>
+  <button class="tab" onclick="switchMain(2)"><span class="tab-num">03</span>Organigrama integrado</button>
+  <button class="tab" onclick="switchMain(3)"><span class="tab-num">04</span>Flujos Waldorf</button>
+</div>
+
+<!-- Sub-tabs for Flujos, hidden when on Organigrama -->
+<div class="subtabs-wrap" id="subtabs-wrap" style="display:none;">
+  <button class="subtab active" onclick="switchFlow(0)">Brochure Fundaju</button>
+  <button class="subtab" onclick="switchFlow(1)">Campaña Colegios</button>
+  <button class="subtab" onclick="switchFlow(2)">Cobertura HABLA</button>
+  <button class="subtab" onclick="switchFlow(3)">Desarrollo Web</button>
+</div>
+
+<div class="main-panel active" id="main-0">
+  <div id="org-actual-root"></div>
+</div>
+
+<div class="main-panel" id="main-1">
+  <div id="org-root"></div>
+</div>
+
+<div class="main-panel" id="main-2">
+  <div id="org-integrado-root"></div>
+</div>
+
+<div class="main-panel" id="main-3">
+  <div class="subpanel active" id="subpanel-0">
+    <div class="start-wrap">
+      <button class="start-btn" id="btn-0" onclick="startFlow(0)">▶ &nbsp;Iniciar flujo</button>
+      <button class="restart-btn" id="restart-0" onclick="restartFlow(0)" style="display:none;">↺ &nbsp;Reiniciar flujo</button>
+    </div>
+    <div class="flow" id="flow-0"></div>
+  </div>
+  <div class="subpanel" id="subpanel-1">
+    <div class="start-wrap">
+      <button class="start-btn" id="btn-1" onclick="startFlow(1)">▶ &nbsp;Iniciar flujo</button>
+      <button class="restart-btn" id="restart-1" onclick="restartFlow(1)" style="display:none;">↺ &nbsp;Reiniciar flujo</button>
+    </div>
+    <div class="flow" id="flow-1"></div>
+  </div>
+  <div class="subpanel" id="subpanel-2">
+    <div class="start-wrap">
+      <button class="start-btn" id="btn-2" onclick="startFlow(2)">▶ &nbsp;Iniciar flujo</button>
+      <button class="restart-btn" id="restart-2" onclick="restartFlow(2)" style="display:none;">↺ &nbsp;Reiniciar flujo</button>
+    </div>
+    <div class="flow" id="flow-2"></div>
+  </div>
+  <div class="subpanel" id="subpanel-3">
+    <div class="start-wrap">
+      <button class="start-btn" id="btn-3" onclick="startFlow(3)">▶ &nbsp;Iniciar flujo</button>
+      <button class="restart-btn" id="restart-3" onclick="restartFlow(3)" style="display:none;">↺ &nbsp;Reiniciar flujo</button>
+    </div>
+    <div class="flow" id="flow-3"></div>
+  </div>
+</div>
+
+<script>
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+
+const STEP_GAP = 2890; // ms between steps (15% faster than original 3400)
+
+const VERTICALS = [
+  { label: 'Grupo Educación', cls: 'c-ge' },
+  { label: 'Red Aprende',     cls: 'c-ra' },
+  { label: 'Fundaju',         cls: 'c-fj' },
+  { label: 'HABLA',           cls: 'c-hb' },
+  { label: 'Base Inmobiliaria', cls: 'c-bi' },
+  { label: 'TIC',             cls: 'c-tic' },
+  { label: 'Talento Humano',  cls: 'c-th' },
+  { label: 'RSE',             cls: 'c-rse' },
+  { label: 'Comunicación',    cls: 'c-com' },
+  { label: 'Otro',            cls: 'c-otro' },
+];
+
+const CHANNELS = [
+  { label: 'Junta / Videollamada', cls: 'c-canal' },
+  { label: 'Correo electrónico',   cls: 'c-canal' },
+  { label: 'Brief',             cls: 'c-canal' },
+];
+
+const ALL_DEPTS = [
+  { id: 'editorial',    label: 'Editorial',              validator: 'Dirección de Comunicación' },
+  { id: 'copy',         label: 'Copy',                   validator: 'Dirección de Comunicación' },
+  { id: 'diseno',       label: 'Diseño Gráfico',         validator: 'Dirección de Arte' },
+  { id: 'audiovisual',  label: 'Audiovisual',            validator: 'Dirección de Arte' },
+  { id: 'desarrollo',   label: 'Desarrollo',             validator: 'TIC' },
+  { id: 'seo',          label: 'SEO / SEM',              validator: 'Dirección de Comunicación' },
+  { id: 'datos',        label: 'Analista de Datos',      validator: 'Dirección de Comunicación' },
+  { id: 'pauta',        label: 'Especialista en Pauta',  validator: 'Dirección de Comunicación' },
+  { id: 'community',    label: 'Community Manager',      validator: 'Dirección de Comunicación' },
+  { id: 'pm',           label: 'Project Manager',        validator: 'Dirección de Comunicación' },
+  { id: 'research',     label: 'Research e Innovación',  validator: 'Dirección de Comunicación' },
+  { id: 'fotovideo',    label: 'Fotógrafo / Videógrafo', validator: 'Dirección de Arte' },
+  { id: 'creativo',     label: 'Creativo / Estratega',   validator: 'Dirección de Comunicación' },
+  { id: 'uxui',         label: 'Diseño UX / UI',         validator: 'Dirección de Arte' },
+];
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+
+function switchMain(idx) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.main-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  const subtabs = document.getElementById('subtabs-wrap');
+  subtabs.style.display = idx === 3 ? 'flex' : 'none';
+  if (idx === 0) renderOrgActual();
+  if (idx === 1) renderOrg();
+  if (idx === 2) renderOrgIntegrado();
+}
+
+let activeFlow = 0;
+function switchFlow(idx) {
+  document.querySelectorAll('.subtab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.subpanel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  activeFlow = idx;
+}
+
+// ─── DRUM ────────────────────────────────────────────────────────────────────
+
+function createDrum(items, finalIndex) {
+  const wrapper = document.createElement('span');
+  wrapper.className = 'drum-wrapper';
+  const drum = document.createElement('span');
+  drum.className = 'drum';
+  const inner = document.createElement('div');
+  inner.className = 'drum-inner';
+
+  // 2 full rotations through all items, then land on final
+  const spinItems = [];
+  for (let i = 0; i < items.length * 2; i++) spinItems.push(items[i % items.length]);
+  spinItems.push(items[finalIndex]);
+
+  spinItems.forEach(it => {
+    const el = document.createElement('div');
+    el.className = `drum-item ${it.cls}`;
+    el.textContent = it.label;
+    inner.appendChild(el);
+  });
+
+  drum.appendChild(inner);
+  wrapper.appendChild(drum);
+  wrapper._inner = inner;
+  wrapper._totalItems = spinItems.length;
+  return wrapper;
+}
+
+function spinDrum(wrapper) {
+  return new Promise(resolve => {
+    const inner = wrapper._inner;
+    const total = wrapper._totalItems;
+    const target = total - 1;
+    const ITEM_H = 36; // fixed px, matches CSS
+    let current = 0;
+
+    function tick() {
+      if (current >= target) {
+        inner.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+        inner.style.transform = `translateY(-${target * ITEM_H}px)`;
+        setTimeout(resolve, 480);
+        return;
+      }
+      const progress = current / (total - 1);
+      const delay = progress < 0.6 ? 35 + progress * 15 : 55 + (progress - 0.6) * 220;
+      inner.style.transition = `transform ${delay}ms linear`;
+      inner.style.transform = `translateY(-${current * ITEM_H}px)`;
+      current++;
+      setTimeout(tick, delay);
+    }
+    tick();
+  });
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+async function pause(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function revealStep(el, delay = 0) {
+  await pause(delay);
+  el.classList.add('show');
+}
+
+function makeStep(index, labelText) {
+  const step = document.createElement('div');
+  step.className = 'step';
+  const idx = document.createElement('div');
+  idx.className = 'step-index';
+  idx.textContent = String(index).padStart(2, '0');
+  const body = document.createElement('div');
+  body.className = 'step-body';
+  const lbl = document.createElement('div');
+  lbl.className = 'step-label';
+  lbl.textContent = labelText;
+  body.appendChild(lbl);
+  step.appendChild(idx);
+  step.appendChild(body);
+  return { step, body };
+}
+
+function makeStepText(...nodes) {
+  const el = document.createElement('div');
+  el.className = 'step-text';
+  nodes.forEach(n => {
+    if (typeof n === 'string') el.appendChild(document.createTextNode(n));
+    else el.appendChild(n);
+  });
+  return el;
+}
+
+function makeNote(text) {
+  const el = document.createElement('div');
+  el.className = 'step-note';
+  el.textContent = text;
+  return el;
+}
+
+function makeDecision(yesTxt, noTxt) {
+  const block = document.createElement('div');
+  block.className = 'decision-block';
+  block.innerHTML = `
+    <div class="decision-branch branch-yes">
+      <div class="branch-label">✓ &nbsp;Si queda validado</div>
+      <div class="branch-content">${yesTxt}</div>
+    </div>
+    <div class="decision-branch branch-no">
+      <div class="branch-label">✗ &nbsp;Si no queda validado</div>
+      <div class="branch-content">${noTxt}</div>
+    </div>`;
+  return block;
+}
+
+function makeParallel(deptIds, extraNote) {
+  const block = document.createElement('div');
+  block.className = 'parallel-block';
+  const lbl = document.createElement('div');
+  lbl.className = 'parallel-label';
+  lbl.textContent = '— Activación simultánea';
+  block.appendChild(lbl);
+  const row = document.createElement('div');
+  row.className = 'parallel-row';
+  deptIds.forEach(id => {
+    const d = ALL_DEPTS.find(x => x.id === id);
+    if (!d) return;
+    const item = document.createElement('div');
+    item.className = 'parallel-item';
+    item.innerHTML = `
+      <div class="parallel-item-name"><span class="dot blue"></span>${d.label}</div>
+      <div class="parallel-item-validator">Valida: ${d.validator}</div>`;
+    row.appendChild(item);
+  });
+  block.appendChild(row);
+  if (extraNote) {
+    const n = document.createElement('div');
+    n.className = 'step-note';
+    n.style.marginTop = '4px';
+    n.textContent = extraNote;
+    block.appendChild(n);
+  }
+  return block;
+}
+
+function makeFinal(cards) {
+  const block = document.createElement('div');
+  block.className = 'final-block';
+  const row = document.createElement('div');
+  row.className = 'final-row';
+  cards.forEach(c => {
+    row.innerHTML += `
+      <div class="final-card">
+        <div class="final-card-name"><span class="dot green"></span>${c.name}</div>
+        <div class="final-card-sub">${c.sub}</div>
+      </div>`;
+  });
+  block.appendChild(row);
+  return block;
+}
+
+function makeStatus(text) {
+  const el = document.createElement('div');
+  el.className = 'status-bar';
+  el.innerHTML = `<span class="status-dot"></span>${text}`;
+  return el;
+}
+
+function makeBottomRestart(idx) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'padding: 28px 0 0 64px;';
+  const btn = document.createElement('button');
+  btn.className = 'restart-btn';
+  btn.textContent = '↺  Reiniciar flujo';
+  btn.onclick = () => restartFlow(idx);
+  wrap.appendChild(btn);
+  return wrap;
+}
+
+// lockedIds   = requeridos, siempre encendidos en verde, no se pueden apagar
+// selectedIds = activados por defecto en azul, se pueden apagar
+// Los demas 14 departamentos aparecen apagados y se pueden encender
+function makeDeptSelector(lockedIds, selectedIds) {
+  const selector = document.createElement('div');
+  selector.className = 'dept-selector';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'dept-selector-label';
+  lbl.textContent = '-- Departamentos de Comunicacion';
+  selector.appendChild(lbl);
+
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:11px;color:#888;margin-bottom:8px;';
+  note.textContent = 'Verde = requerido para este flujo. Azul = activo por defecto, puede desactivarse. Gris = disponible, puede activarse.';
+  selector.appendChild(note);
+
+  const chips = document.createElement('div');
+  chips.className = 'dept-chips';
+
+  const activeSet = new Set([...lockedIds, ...selectedIds]);
+
+  const listWrap = document.createElement('div');
+  listWrap.className = 'dept-selected-list';
+
+  function renderList() {
+    listWrap.innerHTML = '';
+    ALL_DEPTS.filter(d => activeSet.has(d.id)).forEach(d => {
+      const isLocked = lockedIds.includes(d.id);
+      listWrap.innerHTML += '<div class="dept-selected-item"><span class="dot ' + (isLocked ? 'locked' : '') + '"></span><span><strong style="color:' + (isLocked ? 'var(--green)' : 'var(--dept)') + '">' + d.label + '</strong><span class="dept-validator"> -- Valida: ' + d.validator + '</span></span></div>';
+    });
+    if (activeSet.size === 0) {
+      listWrap.innerHTML = '<div style="font-size:11px;color:#555;">Ningun departamento activado.</div>';
+    }
+  }
+
+  ALL_DEPTS.forEach(d => {
+    const chip = document.createElement('button');
+    const isLocked = lockedIds.includes(d.id);
+    const isSelected = selectedIds.includes(d.id);
+    if (isLocked) chip.className = 'dept-chip locked';
+    else if (isSelected) chip.className = 'dept-chip selected';
+    else chip.className = 'dept-chip';
+    chip.textContent = d.label;
+    chip.dataset.id = d.id;
+    if (!isLocked) {
+      chip.addEventListener('click', () => {
+        if (activeSet.has(d.id)) { activeSet.delete(d.id); chip.classList.remove('selected'); }
+        else { activeSet.add(d.id); chip.classList.add('selected'); }
+        renderList();
+      });
+    }
+    chips.appendChild(chip);
+  });
+
+  selector.appendChild(chips);
+  selector.appendChild(listWrap);
+  renderList();
+  return selector;
+}
+
+// ─── FLOW 0: BROCHURE NUEVO ──────────────────────────────────────────────────
+
+async function buildFlow0() {
+  const flow = document.getElementById('flow-0');
+  flow.innerHTML = '';
+  flow.classList.add('visible');
+
+  // Step 1
+  const drum1 = createDrum(VERTICALS, 2); // Fundaju
+  const { step: s1, body: b1 } = makeStep(1, 'Origen de la solicitud');
+  b1.appendChild(makeStepText('La dirección de ', drum1, ' realiza una solicitud de brochure nuevo.'));
+  b1.appendChild(makeNote('Dirección Fundaju inicia el proceso.'));
+  flow.appendChild(s1);
+  await revealStep(s1, 200);
+  await spinDrum(drum1);
+  await pause(STEP_GAP);
+
+  // Step 2
+  const drum2 = createDrum(CHANNELS, FLOW_CHANNEL[0]); // Junta/Videollamada
+  const { step: s2, body: b2 } = makeStep(2, 'Canal de entrada');
+  b2.appendChild(makeStepText('La solicitud llega al Depto. de Comunicación vía ', drum2, '.'));
+  b2.appendChild(makeNote('Canales disponibles: junta / videollamada, correo electrónico, brief.'));
+  flow.appendChild(s2);
+  await revealStep(s2, 200);
+  await spinDrum(drum2);
+  await pause(STEP_GAP);
+
+  // Step 3
+  const { step: s3, body: b3 } = makeStep(3, 'Producción del brochure');
+  b3.appendChild(makeStepText('Comunicación activa en paralelo a los departamentos de producción.'));
+  b3.appendChild(makeDeptSelector(
+    ['editorial', 'copy', 'diseno'],
+    ['audiovisual', 'pm', 'research']
+  ));
+  flow.appendChild(s3);
+  await revealStep(s3, 200);
+  await pause(STEP_GAP);
+
+  // Step 4
+  const { step: s4, body: b4 } = makeStep(4, 'Validación interna');
+  b4.appendChild(makeStepText('Los entregables pasan por validación antes de la versión final.'));
+  b4.appendChild(makeDecision(
+    'Se produce la versión final del brochure y se envía a Dirección Fundaju para visto bueno.',
+    'El entregable regresa al departamento correspondiente para correcciones. El ciclo se repite hasta obtener aprobación.'
+  ));
+  flow.appendChild(s4);
+  await revealStep(s4, 200);
+  await pause(STEP_GAP);
+
+  // Step 5
+  const { step: s5, body: b5 } = makeStep(5, 'Visto bueno — Dirección Fundaju');
+  b5.appendChild(makeStepText('La versión final se envía a Dirección Fundaju para visto bueno.'));
+  b5.appendChild(makeDecision(
+    'El brochure queda aprobado. El proceso continúa hacia publicación y almacenamiento.',
+    'Dirección Fundaju devuelve comentarios. El proceso regresa a producción para ajuste y nueva validación.'
+  ));
+  flow.appendChild(s5);
+  await revealStep(s5, 200);
+  await pause(STEP_GAP);
+
+  // Step 6
+  const drum3 = createDrum(ALL_DEPTS.map(d => ({ label: d.label, cls: 'c-dept' })), 4); // Desarrollo
+  const { step: s6, body: b6 } = makeStep(6, 'Publicación en sitio web');
+  b6.appendChild(makeStepText('El brochure aprobado pasa al departamento de ', drum3, ', que lo publica en el sitio web.'));
+  b6.appendChild(makeNote('Desarrollo sube el brochure al sitio correspondiente de Fundaju.'));
+  flow.appendChild(s6);
+  await revealStep(s6, 200);
+  await spinDrum(drum3);
+  await pause(STEP_GAP);
+
+  // Step 7
+  const { step: s7, body: b7 } = makeStep(7, 'Cierre y almacenamiento');
+  b7.appendChild(makeStepText('El archivo final se almacena en la nube con acceso controlado.'));
+  b7.appendChild(makeFinal([
+    { name: 'Almacenamiento en nube', sub: 'Acceso controlado por rol' },
+    { name: 'Publicado en sitio web', sub: 'Disponible para el público' },
+    { name: 'Proceso completado',     sub: 'Brochure activo — Fundaju' },
+  ]));
+  flow.appendChild(s7);
+  await revealStep(s7, 200);
+
+  flow.appendChild(makeStatus('Flujo completado — Brochure activo'));
+  flow.appendChild(makeBottomRestart(0));
+}
+
+// ─── FLOW 1: CAMPAÑA COLEGIOS ────────────────────────────────────────────────
+
+async function buildFlow1() {
+  const flow = document.getElementById('flow-1');
+  flow.innerHTML = '';
+  flow.classList.add('visible');
+
+  // Step 1
+  const drum1 = createDrum(VERTICALS, 1); // Red Aprende
+  const { step: s1, body: b1 } = makeStep(1, 'Origen de la solicitud');
+  b1.appendChild(makeStepText('La dirección de ', drum1, ' solicita una campaña para aumentar la matrícula de colegios.'));
+  b1.appendChild(makeNote('Dirección Red Aprende inicia el proceso.'));
+  flow.appendChild(s1);
+  await revealStep(s1, 200);
+  await spinDrum(drum1);
+  await pause(STEP_GAP);
+
+  // Step 2
+  const drum2 = createDrum(CHANNELS, FLOW_CHANNEL[1]); // WhatsApp
+  const { step: s2, body: b2 } = makeStep(2, 'Canal de entrada');
+  b2.appendChild(makeStepText('La solicitud llega al Depto. de Comunicación vía ', drum2, '.'));
+  b2.appendChild(makeNote('Canal: brief.'));
+  flow.appendChild(s2);
+  await revealStep(s2, 200);
+  await spinDrum(drum2);
+  await pause(STEP_GAP);
+
+  // Step 3
+  const { step: s3, body: b3 } = makeStep(3, 'Activación de departamentos');
+  b3.appendChild(makeStepText('Comunicación activa los departamentos necesarios para la campaña.'));
+  b3.appendChild(makeDeptSelector(
+    ['creativo', 'diseno', 'audiovisual', 'uxui', 'desarrollo', 'pauta', 'datos'],
+    ['community', 'seo', 'pm', 'fotovideo']
+  ));
+  flow.appendChild(s3);
+  await revealStep(s3, 200);
+  await pause(STEP_GAP);
+
+  // Step 4
+  const { step: s4, body: b4 } = makeStep(4, 'Producción de piezas');
+  b4.appendChild(makeStepText('Cada departamento produce sus entregables de forma paralela.'));
+  b4.appendChild(makeParallel(
+    ['creativo', 'diseno', 'audiovisual'],
+    'Creativo/Estratega define conceptualización y mensajes clave. Diseño Gráfico y Audiovisual producen las piezas.'
+  ));
+  flow.appendChild(s4);
+  await revealStep(s4, 200);
+  await pause(STEP_GAP);
+
+  // Step 5 - validaciones múltiples
+  const { step: s5, body: b5 } = makeStep(5, 'Validaciones en paralelo');
+  b5.appendChild(makeStepText('Los entregables pasan por tres validaciones simultáneas antes de publicar.'));
+  const valBlock = document.createElement('div');
+  valBlock.className = 'parallel-block';
+  valBlock.innerHTML = `
+    <div class="parallel-label">— Tres validadores simultáneos</div>
+    <div class="parallel-row">
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Piezas gráficas y AV</div>
+        <div class="parallel-item-validator">Valida: Dirección de Arte</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Mensajes clave</div>
+        <div class="parallel-item-validator">Valida: Dirección de Comunicación + Dirección Red Aprende + Directores de Colegios</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Landing pages</div>
+        <div class="parallel-item-validator">Valida: TIC (funcionamiento técnico)</div>
+      </div>
+    </div>`;
+  b5.appendChild(valBlock);
+  flow.appendChild(s5);
+  await revealStep(s5, 200);
+  await pause(STEP_GAP);
+
+  // Step 6
+  const { step: s6, body: b6 } = makeStep(6, 'Validación sí/no — Landing pages con TIC');
+  b6.appendChild(makeStepText('TIC valida el correcto funcionamiento de las landing pages.'));
+  b6.appendChild(makeDecision(
+    'Landing pages aprobadas. Se procede a ejecutar la pauta y activar al Analista de Datos.',
+    'Desarrollo recibe los comentarios de TIC y corrige. El ciclo se repite hasta obtener aprobación técnica.'
+  ));
+  flow.appendChild(s6);
+  await revealStep(s6, 200);
+  await pause(STEP_GAP);
+
+  // Step 7
+  const { step: s7, body: b7 } = makeStep(7, 'Ejecución de pauta y optimización');
+  b7.appendChild(makeStepText('Especialista en Pauta ejecuta la pauta. Analista de Datos recibe datos, optimiza y genera reportes.'));
+  b7.appendChild(makeParallel(
+    ['pauta', 'datos'],
+    'Ambos departamentos trabajan en paralelo durante toda la duración de la campaña.'
+  ));
+  flow.appendChild(s7);
+  await revealStep(s7, 200);
+  await pause(STEP_GAP);
+
+  // Step 8
+  const { step: s8, body: b8 } = makeStep(8, 'Cierre — Reporte de resultados');
+  b8.appendChild(makeStepText('Analista de Datos genera el reporte final de resultados y lo entrega a Dirección Red Aprende.'));
+  b8.appendChild(makeFinal([
+    { name: 'Reporte de resultados',   sub: 'Generado por Analista de Datos' },
+    { name: 'Entregado a Dirección',   sub: 'Red Aprende' },
+    { name: 'Proceso completado',      sub: 'Campaña colegios cerrada' },
+  ]));
+  flow.appendChild(s8);
+  await revealStep(s8, 200);
+
+  flow.appendChild(makeStatus('Flujo completado — Campaña colegios'));
+  flow.appendChild(makeBottomRestart(1));
+}
+
+// ─── FLOW 2: COBERTURA HABLA SUMMIT ─────────────────────────────────────────
+
+async function buildFlow2() {
+  const flow = document.getElementById('flow-2');
+  flow.innerHTML = '';
+  flow.classList.add('visible');
+
+  // Step 1
+  const drum1 = createDrum(VERTICALS, 3); // HABLA
+  const { step: s1, body: b1 } = makeStep(1, 'Origen de la solicitud');
+  b1.appendChild(makeStepText('La dirección de ', drum1, ' solicita cobertura para su evento anual.'));
+  b1.appendChild(makeNote('Dirección HABLA solicita cobertura integral del HABLA.'));
+  flow.appendChild(s1);
+  await revealStep(s1, 200);
+  await spinDrum(drum1);
+  await pause(STEP_GAP);
+
+  // Step 2
+  const drum2 = createDrum(CHANNELS, FLOW_CHANNEL[2]); // Correo electronico
+  const { step: s2, body: b2 } = makeStep(2, 'Canal de entrada');
+  b2.appendChild(makeStepText('La solicitud llega al Depto. de Comunicación vía ', drum2, '.'));
+  b2.appendChild(makeNote('Canales disponibles: junta / videollamada, correo electrónico, brief.'));
+  flow.appendChild(s2);
+  await revealStep(s2, 200);
+  await spinDrum(drum2);
+  await pause(STEP_GAP);
+
+  // Step 3
+  const { step: s3, body: b3 } = makeStep(3, 'Activación de departamentos');
+  b3.appendChild(makeStepText('Comunicación activa los departamentos necesarios para la cobertura.'));
+  b3.appendChild(makeDeptSelector(
+    ['fotovideo', 'creativo', 'diseno', 'audiovisual', 'community', 'pauta', 'datos'],
+    ['pm', 'seo', 'copy']
+  ));
+  flow.appendChild(s3);
+  await revealStep(s3, 200);
+  await pause(STEP_GAP);
+
+  // Step 4
+  const { step: s4, body: b4 } = makeStep(4, 'Preproducción del evento');
+  b4.appendChild(makeStepText('Creativo / Estratega conceptualiza la cobertura: entrevistas, storyboards de reels, plan de contenido.'));
+  b4.appendChild(makeNote('Se definen preguntas para entrevistas con speakers, asistentes y miembros de Grupo Educación. Se planifican los formatos de contenido por plataforma.'));
+  flow.appendChild(s4);
+  await revealStep(s4, 200);
+  await pause(STEP_GAP);
+
+  // Step 5
+  const { step: s5, body: b5 } = makeStep(5, 'Día del evento — Captura en vivo');
+  b5.appendChild(makeStepText('Equipo de Fotógrafo / Videógrafo en el Summit. Material capturado se envía en tiempo real a producción.'));
+  const liveBlock = document.createElement('div');
+  liveBlock.className = 'parallel-block';
+  liveBlock.innerHTML = `
+    <div class="parallel-label">— Flujo de material en vivo</div>
+    <div class="parallel-row">
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Material fotográfico</div>
+        <div class="parallel-item-validator">Destino: Diseño Gráfico</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Material de video</div>
+        <div class="parallel-item-validator">Destino: Edición de Video (Audiovisual)</div>
+      </div>
+    </div>
+    <div class="step-note">Entrevistas: speakers, asistentes, miembros de Grupo Educación.</div>`;
+  b5.appendChild(liveBlock);
+  flow.appendChild(s5);
+  await revealStep(s5, 200);
+  await pause(STEP_GAP);
+
+  // Step 6
+  const { step: s6, body: b6 } = makeStep(6, 'Edición en vivo y validación');
+  b6.appendChild(makeStepText('Diseño Gráfico y Audiovisual editan el material durante el evento. Dirección de Arte valida antes de publicar.'));
+  b6.appendChild(makeDecision(
+    'Piezas aprobadas por Dirección de Arte. Pasan a Community Manager para publicación.',
+    'Material regresa a Diseño Gráfico / Audiovisual para ajustes. Se repite hasta obtener aprobación.'
+  ));
+  flow.appendChild(s6);
+  await revealStep(s6, 200);
+  await pause(STEP_GAP);
+
+  // Step 7
+  const { step: s7, body: b7 } = makeStep(7, 'Revisión — Dirección HABLA');
+  b7.appendChild(makeStepText('Las piezas pasan por revisión de Dirección HABLA antes de publicarse.'));
+  b7.appendChild(makeNote('Revisión que siempre pasa. Dirección HABLA puede agregar comentarios, pero no genera loop de corrección en esta etapa.'));
+  flow.appendChild(s7);
+  await revealStep(s7, 200);
+  await pause(STEP_GAP);
+
+  // Step 8
+  const { step: s8, body: b8 } = makeStep(8, 'Publicación y pauta');
+  b8.appendChild(makeStepText('Community Manager publica las piezas según plan. Especialista en Pauta ejecuta pauta sobre piezas seleccionadas.'));
+  const pubBlock = document.createElement('div');
+  pubBlock.className = 'parallel-block';
+  pubBlock.innerHTML = `
+    <div class="parallel-label">— Planeación de publicación</div>
+    <div class="parallel-row">
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Mismo día del evento</div>
+        <div class="parallel-item-validator">Community Manager publica piezas de alto impacto en vivo.</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Plan de contenido posterior</div>
+        <div class="parallel-item-validator">Piezas restantes se distribuyen según calendario editorial.</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Piezas pautadas</div>
+        <div class="parallel-item-validator">Especialista en Pauta selecciona y ejecuta la pauta.</div>
+      </div>
+    </div>`;
+  b8.appendChild(pubBlock);
+  flow.appendChild(s8);
+  await revealStep(s8, 200);
+  await pause(STEP_GAP);
+
+  // Step 9
+  const { step: s9, body: b9 } = makeStep(9, 'Cierre — Reporte de resultados');
+  b9.appendChild(makeStepText('Analista de Datos genera el reporte de resultados de pauta y cobertura.'));
+  b9.appendChild(makeFinal([
+    { name: 'Reporte de cobertura',    sub: 'Analista de Datos' },
+    { name: 'Reporte de pauta',        sub: 'Resultados y alcance' },
+    { name: 'Proceso completado',      sub: 'Summit HABLA cerrado' },
+  ]));
+  flow.appendChild(s9);
+  await revealStep(s9, 200);
+
+  flow.appendChild(makeStatus('Flujo completado — Cobertura HABLA'));
+  flow.appendChild(makeBottomRestart(2));
+}
+
+// ─── FLOW 3: DESARROLLO WEB — COLEGIOS ALBERTSONS ───────────────────────────
+
+async function buildFlow3() {
+  const flow = document.getElementById('flow-3');
+  flow.innerHTML = '';
+  flow.classList.add('visible');
+
+  // Step 1
+  const drum1 = createDrum(VERTICALS, 5); // TIC
+  const { step: s1, body: b1 } = makeStep(1, 'Origen de la solicitud');
+  b1.appendChild(makeStepText('La dirección de ', drum1, ' solicita el desarrollo del nuevo sitio web de Colegios Albertsons.'));
+  b1.appendChild(makeNote('Dirección de TIC inicia el proceso y coordina con Comunicación.'));
+  flow.appendChild(s1);
+  await revealStep(s1, 200);
+  await spinDrum(drum1);
+  await pause(STEP_GAP);
+
+  // Step 2
+  const drum2 = createDrum(CHANNELS, FLOW_CHANNEL[3]); // Junta/Videollamada
+  const { step: s2, body: b2 } = makeStep(2, 'Canal de entrada');
+  b2.appendChild(makeStepText('La solicitud llega al Depto. de Comunicación vía ', drum2, '.'));
+  b2.appendChild(makeNote('Canales disponibles: junta / videollamada, correo electrónico, brief.'));
+  flow.appendChild(s2);
+  await revealStep(s2, 200);
+  await spinDrum(drum2);
+  await pause(STEP_GAP);
+
+  // Step 3
+  const { step: s3, body: b3 } = makeStep(3, 'Activación de departamentos');
+  b3.appendChild(makeStepText('Comunicación activa los departamentos necesarios para el desarrollo del sitio.'));
+  b3.appendChild(makeDeptSelector(
+    ['editorial', 'copy', 'uxui', 'desarrollo'],
+    ['pm', 'seo', 'diseno']
+  ));
+  flow.appendChild(s3);
+  await revealStep(s3, 200);
+  await pause(STEP_GAP);
+
+  // Step 4
+  const { step: s4, body: b4 } = makeStep(4, 'Arquitectura y contenido');
+  b4.appendChild(makeStepText('Editorial define las secciones del sitio. Copy desarrolla el contenido. Diseño UX/UI diseña el sitio y el design system.'));
+  b4.appendChild(makeParallel(
+    ['editorial', 'copy', 'uxui'],
+    'Los tres departamentos trabajan en paralelo. Editorial define estructura, Copy llena el contenido, UX/UI diseña la experiencia y el sistema de diseño.'
+  ));
+  flow.appendChild(s4);
+  await revealStep(s4, 200);
+  await pause(STEP_GAP);
+
+  // Step 5 — validación diseño con loop
+  const { step: s5, body: b5 } = makeStep(5, 'Validación de diseño — Dirección de Arte');
+  b5.appendChild(makeStepText('El diseño UX/UI pasa por validación con Dirección de Arte antes de entrar a desarrollo.'));
+  b5.appendChild(makeDecision(
+    'Diseño aprobado por Dirección de Arte. Se procede al desarrollo técnico del sitio.',
+    'Diseño UX/UI recibe observaciones y corrige. El ciclo se repite hasta obtener aprobación.'
+  ));
+  flow.appendChild(s5);
+  await revealStep(s5, 200);
+  await pause(STEP_GAP);
+
+  // Step 6 — validación contenido, siempre pasa
+  const { step: s6, body: b6 } = makeStep(6, 'Revisión de contenido');
+  b6.appendChild(makeStepText('El contenido es revisado por Dirección de Colegios Albertsons y Dirección de Red Aprende.'));
+  const valBlock = document.createElement('div');
+  valBlock.className = 'parallel-block';
+  valBlock.innerHTML = `
+    <div class="parallel-label">— Dos revisores simultáneos</div>
+    <div class="parallel-row">
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Dirección Colegios Albertsons</div>
+        <div class="parallel-item-validator">Revisa precisión y tono institucional del contenido.</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Dirección Red Aprende</div>
+        <div class="parallel-item-validator">Revisa alineación con estrategia de la vertical educativa.</div>
+      </div>
+    </div>
+    <div class="step-note" style="margin-top:10px;">Revisión que siempre pasa. Comentarios se integran antes de desarrollo.</div>`;
+  b6.appendChild(valBlock);
+  flow.appendChild(s6);
+  await revealStep(s6, 200);
+  await pause(STEP_GAP);
+
+  // Step 7 — desarrollo
+  const { step: s7, body: b7 } = makeStep(7, 'Desarrollo técnico');
+  b7.appendChild(makeStepText('Desarrollo programa el sitio con base en el diseño aprobado y el contenido validado.'));
+  b7.appendChild(makeNote('El área de Desarrollo trabaja sobre el design system entregado por UX/UI. TIC puede participar como asesor técnico durante esta etapa.'));
+  flow.appendChild(s7);
+  await revealStep(s7, 200);
+  await pause(STEP_GAP);
+
+  // Step 8 — subida a servidores
+  const { step: s8, body: b8 } = makeStep(8, 'Subida a servidores — Coordinación con TIC');
+  b8.appendChild(makeStepText('Una vez aprobado y desarrollado el sitio, Desarrollo coordina con Dirección de TIC la subida a los servidores del Grupo.'));
+  const ticBlock = document.createElement('div');
+  ticBlock.className = 'parallel-block';
+  ticBlock.innerHTML = `
+    <div class="parallel-label">— Checklist de lanzamiento</div>
+    <div class="parallel-row">
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Revisión técnica final</div>
+        <div class="parallel-item-validator">TIC valida infraestructura, seguridad y accesos.</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Subida a servidores</div>
+        <div class="parallel-item-validator">Desarrollo ejecuta el deploy coordinado con TIC.</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot blue"></span>Verificación post-lanzamiento</div>
+        <div class="parallel-item-validator">Ambos equipos verifican funcionamiento en producción.</div>
+      </div>
+    </div>`;
+  b8.appendChild(ticBlock);
+  flow.appendChild(s8);
+  await revealStep(s8, 200);
+  await pause(STEP_GAP);
+
+  // Step 9 — mantenimiento continuo (flujo abierto)
+  const { step: s9, body: b9 } = makeStep(9, 'Mantenimiento continuo — Flujo abierto');
+  b9.appendChild(makeStepText('El sitio está activo. Desarrollo mantiene el sitio de forma preventiva y correctiva de manera indefinida.'));
+
+  const mantBlock = document.createElement('div');
+  mantBlock.className = 'parallel-block';
+  mantBlock.style.borderColor = '#3a3a00';
+  mantBlock.innerHTML = `
+    <div class="parallel-label" style="color:var(--canal);">— Ciclo de mantenimiento permanente</div>
+    <div class="parallel-row">
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot" style="background:var(--canal)"></span>Mantenimiento preventivo</div>
+        <div class="parallel-item-sub">Recurrente</div>
+        <div class="parallel-item-validator">Actualizaciones, backups, optimización de rendimiento, revisión de seguridad.</div>
+      </div>
+      <div class="parallel-item">
+        <div class="parallel-item-name"><span class="dot" style="background:var(--red)"></span>Mantenimiento correctivo</div>
+        <div class="parallel-item-sub">Bajo demanda</div>
+        <div class="parallel-item-validator">Corrección de bugs, ajustes de contenido, cambios solicitados por TIC, Red Aprende o Colegios Albertsons.</div>
+      </div>
+    </div>
+    <div class="step-note" style="margin-top:8px;color:var(--canal);">Este flujo no cierra. El sitio requiere atención continua por parte de Desarrollo en coordinación con TIC.</div>`;
+  b9.appendChild(mantBlock);
+  flow.appendChild(s9);
+  await revealStep(s9, 200);
+
+  // Status abierto
+  const statusEl = makeStatus('Flujo activo — Sitio en producción · Mantenimiento continuo');
+  statusEl.querySelector('.status-dot').style.background = 'var(--canal)';
+  flow.appendChild(statusEl);
+  flow.appendChild(makeBottomRestart(3));
+}
+
+// ─── ORGANIGRAMA ACTUAL ───────────────────────────────────────────────────────
+
+let orgActualRendered = false;
+
+function renderOrgActual() {
+  if (orgActualRendered) return;
+  orgActualRendered = true;
+
+  const root = document.getElementById('org-actual-root');
+  root.style.cssText = 'padding:48px 40px 80px; width:100%; max-width:960px;';
+
+  root.innerHTML = `
+    <div class="org-intro">
+      <div class="org-intro-label">Estado actual — 2026</div>
+      <div class="org-intro-title">Organigrama actual: Comunicación y Marketing</div>
+      <div class="org-intro-note">Estructura vigente. Comunicación y Marketing operan como silos separados sin coordinación formal. Waldorf da servicio a verticales corporativas pero no a colegios. Marketing solo atiende colegios de Red Aprende.</div>
+    </div>`;
+
+  // ── Comunicación
+  root.innerHTML += `
+    <div class="org-group-label" style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Comunicación</div>`;
+
+  const comBlock = document.createElement('div');
+  comBlock.style.cssText = 'border:1px solid #2a2a2a; background:#0d0d0d; margin-bottom:28px;';
+
+  const dirCom = document.createElement('div');
+  dirCom.style.cssText = 'padding:14px 16px; border-bottom:1px solid #1e1e1e; background:#0a140a;';
+  dirCom.innerHTML = `
+    <div style="font-family:'Fraunces',serif;font-weight:600;font-size:13px;color:var(--green);">Director de Comunicación</div>
+    <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;">Reporta a Co-Dirección</div>`;
+  comBlock.appendChild(dirCom);
+
+  const comInternos = [
+    { label: 'Director de Arte', sub: 'Interno' },
+    { label: 'Diseñador Gráfico Jr.', sub: 'Interno' },
+  ];
+  const comInternoRow = document.createElement('div');
+  comInternoRow.style.cssText = 'padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap; border-bottom:1px solid #1a1a1a;';
+  comInternos.forEach(n => {
+    comInternoRow.innerHTML += `<div style="border:1px solid #2a2a2a;padding:7px 12px;background:#0a0a0a;font-size:10px;color:var(--text);font-family:'DM Mono',monospace;">${n.label}<div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;">${n.sub}</div></div>`;
+  });
+  comBlock.appendChild(comInternoRow);
+
+  const waldorfRow = document.createElement('div');
+  waldorfRow.style.cssText = 'padding:12px 16px;';
+  waldorfRow.innerHTML = `<div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#555;margin-bottom:8px;">Agencia externa</div>
+    <div style="border:1px dashed #2a2a3a;padding:10px 14px;background:#08080f;display:inline-flex;align-items:center;gap:10px;">
+      <span style="font-family:'Fraunces',serif;font-weight:600;font-size:12px;color:var(--accent-tic);">Waldorf</span>
+      <span style="font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">14 servicios · iguala corporativa</span>
+    </div>
+    <div style="font-size:9px;color:#bbb;margin-top:8px;line-height:1.6;">Da servicio a: Grupo Educación corporativo, Red Aprende (vertical), Fundaju, HABLA (parcial), TH, RSE, TIC (sitios web). No da servicio a los colegios individualmente.</div>`;
+  comBlock.appendChild(waldorfRow);
+  root.appendChild(comBlock);
+
+  // ── Marketing
+  root.innerHTML += `<div class="org-group-label" style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Marketing</div>`;
+
+  const mktBlock = document.createElement('div');
+  mktBlock.style.cssText = 'border:1px solid #2a2a2a; background:#0d0d0d; margin-bottom:28px;';
+
+  const dirMkt = document.createElement('div');
+  dirMkt.style.cssText = 'padding:14px 16px; border-bottom:1px solid #1e1e1e; background:#13110a;';
+  dirMkt.innerHTML = `
+    <div style="font-family:'Fraunces',serif;font-weight:600;font-size:13px;color:var(--canal);">Directora de Marketing</div>
+    <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;">Reporta a Co-Dirección · Funciones no definidas formalmente</div>`;
+  mktBlock.appendChild(dirMkt);
+
+  const mktNodes = [
+    { label: 'Especialista en Pauta', sub: 'Solo colegios de Red Aprende', note: 'Ejecuta campañas pagadas únicamente para los cuatro colegios. No da servicio a otras verticales.' },
+    { label: 'Coordinadora de Leads', sub: 'Enlace Marketing–Colegios · Salesforce', note: 'Gestiona leads entrantes en Salesforce. Coordina seguimiento con asesores de admisiones en cada colegio (citas, exámenes, info de colegiaturas).' },
+  ];
+
+  const mktRow = document.createElement('div');
+  mktRow.style.cssText = 'padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap;';
+  mktNodes.forEach(n => {
+    mktRow.innerHTML += `<div style="border:1px solid #2a2a2a;padding:7px 12px;background:#0a0a0a;font-size:10px;color:var(--text);font-family:'DM Mono',monospace;max-width:260px;">${n.label}<div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;">${n.sub}</div><div style="font-size:9px;color:#bbb;margin-top:6px;line-height:1.5;text-transform:none;letter-spacing:0;">${n.note}</div></div>`;
+  });
+  mktBlock.appendChild(mktRow);
+  root.appendChild(mktBlock);
+
+  // ── Colegios (under Marketing)
+  root.innerHTML += `<div class="org-group-label" style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;"><span style="color:#7ac4e8;">Colegios</span> — perfiles locales autónomos (sin coordinación central)</div>`;
+  const colegiosBlock = document.createElement('div');
+  colegiosBlock.style.cssText = 'border:1px dashed #2a2a2a;padding:12px 16px;background:#090d09;margin-bottom:28px;';
+  colegiosBlock.innerHTML = `
+    <div style="font-size:9px;color:#bbb;line-height:1.7;margin-bottom:10px;">Cada colegio opera de forma independiente. Entre 1 y 2 personas por colegio que combinan diseño, edición de video y community management según el volumen. No hay línea de reporte formal hacia Comunicación ni Marketing corporativo.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${['Colegio Alerce · Hermosillo','Colegio Albertson\'s · San Luis Potosí','Instituto Anglo Moderno · Mazatlán','Colegio Americano de San Carlos · Guaymas'].map(c => `<div style="border:1px solid #2a2a2a;padding:6px 10px;font-size:10px;letter-spacing:.04em;color:var(--text);">${c}</div>`).join('')}
+    </div>`;
+  root.appendChild(colegiosBlock);
+
+  // ── HABLA equipo externo
+  root.innerHTML += `<div class="org-group-label" style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">HABLA — equipo externo independiente</div>`;
+  const hablaBlock = document.createElement('div');
+  hablaBlock.style.cssText = 'border:1px dashed #2a2a2a;padding:12px 16px;background:#09090d;margin-bottom:28px;display:flex;gap:8px;flex-wrap:wrap;';
+  ['Directora de Producción','Community Manager','Editorial / Sitio Web','Relaciones Públicas'].forEach(r => {
+    hablaBlock.innerHTML += `<div style="border:1px solid #2a2a2a;padding:6px 10px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text);">${r}</div>`;
+  });
+  root.appendChild(hablaBlock);
+
+
+}
+
+// ─── ORGANIGRAMA IDEAL ────────────────────────────────────────────────────────
+
+let orgRendered = false;
+
+function makeOrgNode(label, sub, acc, drawer) {
+  const node = document.createElement('div');
+  node.className = 'org-node';
+  node.innerHTML = `
+    <div class="org-node-accent acc-${acc}"></div>
+    <div class="org-node-top">
+      <div class="org-node-text">
+        <div class="org-node-label">${label}</div>
+        <div class="org-node-sub">${sub}</div>
+      </div>
+      <div class="org-node-chevron">▾</div>
+    </div>
+    <div class="org-node-drawer">${drawer}</div>`;
+  node.addEventListener('click', () => {
+    const open = node.classList.toggle('expanded');
+    node.querySelector('.org-node-chevron').style.transform = open ? 'rotate(180deg)' : '';
+  });
+  return node;
+}
+function makeOrgNodeIntegrado(label, sub, acc, drawer, isNew, salary, refs) {
+  const node = document.createElement('div');
+  node.className = 'org-node';
+  const newBadge = isNew ? `<span style="color:var(--green);font-size:9px;letter-spacing:.15em;text-transform:uppercase;font-family:'DM Mono',monospace;margin-bottom:4px;display:block;">NUEVO</span>` : '';
+  const salaryBlock = salary ? `
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #1e1e1e;">
+      <div style="font-size:10px;color:var(--green);letter-spacing:.05em;">Salario bruto: <strong>${salary}</strong> MXN brutos/mes</div>
+      <div style="font-size:9px;color:#555;margin-top:3px;line-height:1.6;">
+        ${refs.map(r => `<a href="${r.url}" target="_blank" style="color:#555;text-decoration:underline;text-decoration-style:dotted;">${r.label}</a>`).join(' · ')}
+      </div>
+    </div>` : '';
+  node.innerHTML = `
+    <div class="org-node-accent acc-${acc}"></div>
+    <div class="org-node-top">
+      <div class="org-node-text">
+        ${newBadge}
+        <div class="org-node-label">${label}</div>
+        <div class="org-node-sub">${sub}</div>
+      </div>
+      <div class="org-node-chevron">▾</div>
+    </div>
+    <div class="org-node-drawer">${drawer}${salaryBlock}</div>`;
+  node.addEventListener('click', () => {
+    const open = node.classList.toggle('expanded');
+    node.querySelector('.org-node-chevron').style.transform = open ? 'rotate(180deg)' : '';
+  });
+  return node;
+}
+
+
+
+function renderOrg() {
+  if (orgRendered) return;
+  orgRendered = true;
+
+  const root = document.getElementById('org-root');
+
+  // ── Intro
+  root.innerHTML = `
+    <div class="org-intro">
+      <div class="org-intro-label">Estructura propuesta — 2026</div>
+      <div class="org-intro-title">Organigrama ideal: Impacto y Comunicación</div>
+      <div class="org-intro-note">Una sola dirección que unifica comunicación, marketing y ventas. Tres departamentos que no compiten: la narrativa alimenta la demanda, la demanda alimenta la conversión. Waldorf opera como brazo externo estratégico. Cada nodo es expandible.</div>
+    </div>
+    <div class="org-legend">
+      <div class="org-legend-item"><div class="org-legend-dot ld-dir"></div>Dirección</div>
+      <div class="org-legend-item"><div class="org-legend-dot ld-int"></div>Comunicación interna</div>
+      <div class="org-legend-item"><div class="org-legend-dot ld-mkt"></div>Marketing y Ventas</div>
+      <div class="org-legend-item"><div class="org-legend-dot ld-field"></div>Campo — Colegios</div>
+      <div class="org-legend-item"><div class="org-legend-dot ld-ext"></div>Externo — Waldorf</div>
+    </div>`;
+
+  // ── Director
+  root.innerHTML += `
+    <div class="org-director-wrap">
+      <div class="org-director-node">
+        <div class="org-director-label">Impacto y Comunicación</div>
+      </div>
+    </div>
+    <div class="org-connector-v"></div>`;
+
+  // ── Connector row (horizontal bar above pillars)
+  const connRow = document.createElement('div');
+  connRow.className = 'org-connector-h-wrap';
+  for (let i = 0; i < 3; i++) {
+    const tick = document.createElement('div');
+    tick.className = 'org-pillar-connector';
+    connRow.appendChild(tick);
+  }
+  root.appendChild(connRow);
+
+  // ── Pillar data
+  const pillars = [
+    {
+      num: '01', title: 'Comunicación',
+      sub: 'Producción interna y validación visual',
+      color: 'var(--accent-com)',
+      nodes: [
+        { label: 'Director de Arte', sub: 'Interno · fijo', acc: 'int',
+          drawer: 'Valida toda la producción visual del Grupo: diseño gráfico, audiovisual, UX/UI. Es el enlace operativo con Waldorf en materia de producción. Aprueba entregables antes de publicación.' },
+        { label: 'Diseñador Gráfico Jr.', sub: 'Interno · fijo', acc: 'int',
+          drawer: 'Atiende las necesidades del día a día: comunicados internos, hojas membretadas, flyers, anuncios. Opera bajo supervisión del Director de Arte.' },
+
+      ]
+    },
+    {
+      num: '02', title: 'Marketing',
+      sub: 'Pauta, datos y estrategia digital para todo el Grupo',
+      color: 'var(--canal)',
+      nodes: [
+        { label: 'Performance Manager', sub: 'Pauta · todas las verticales', acc: 'mkt',
+          drawer: 'Gestiona y optimiza todas las campañas pagadas del Grupo: Red Aprende, colegios, Fundaju, HABLA, TH (reclutamiento), y verticales que se activen. Reporta resultados en las reuniones mensuales de Impacto y Comunicación.' },
+        { label: 'Gestor de Contenido y Comunidad · Colegio Alerce', sub: 'Campo · Hermosillo, Sonora', acc: 'field',
+          drawer: 'Perfil de contenido descentralizado. Documenta el día a día del colegio: fotos, video, eventos, logros. Sube stories, produce contenido auténtico para redes del colegio. Coordina con el Coordinador de Contenidos en Waldorf.' },
+        { label: "Gestor de Contenido y Comunidad · Colegio Albertson's", sub: 'Campo · San Luis Potosí, SLP', acc: 'field',
+          drawer: 'Misma función. Prioridad alta: el colegio no tiene sitio web activo. Interlocutor clave durante el desarrollo del nuevo sitio.' },
+        { label: 'Gestor de Contenido y Comunidad · Instituto Anglo Moderno', sub: 'Campo · Mazatlán, Sinaloa', acc: 'field',
+          drawer: 'Misma función. Evaluar si existe un perfil interno reconvertible antes de contratar.' },
+        { label: 'Gestor de Contenido y Comunidad · Colegio Americano de San Carlos', sub: 'Campo · Guaymas, Sonora', acc: 'field',
+          drawer: 'Misma función. Alta autonomía operativa requerida por distancia al corporativo.' },
+
+
+      ]
+    },
+    {
+      num: '03', title: 'Ventas',
+      sub: 'Director Comercial + subdirecciones por vertical',
+      color: 'var(--accent-ra)',
+      nodes: [
+
+        { label: 'Manager Comercial Red Aprende', sub: 'Colegios · leads, admisiones, Salesforce', acc: 'mkt',
+          drawer: 'Gestiona el proceso de admisiones de los cuatro colegios. Recibe leads desde Salesforce, los asigna a los asesores internos de cada plantel y asegura el seguimiento completo: citas, exámenes de admisión, información de colegiaturas, brochures, cierre. Hoy esta función la ejerce Yunue de forma parcial; este rol la formaliza y amplía.' },
+        { label: 'Manager Comercial HABLA', sub: 'Patrocinios, alianzas y boletos corporativos', acc: 'mkt',
+          drawer: 'Responsable de los ingresos de HABLA: venta de patrocinios a marcas, alianzas de largo plazo y boletos corporativos para los foros del año. Ciclo de venta consultivo con interlocutores de nivel directivo en empresas. Los boletos al público general los gestiona Marketing Digital.' },
+        { label: 'Manager Comercial Fundaju', sub: 'Donativos, aliados institucionales y becas', acc: 'mkt',
+          drawer: 'Cultiva relaciones con donadores individuales e institucionales, gestiona alianzas estratégicas y coordina el proceso de asignación y seguimiento de becas. Desarrollo institucional de largo plazo. Coordina con la Dirección de Fundaju.' },
+        { label: 'Manager Comercial Base Inmobiliaria', sub: 'Venta y renta de inmuebles · evaluar vs. equipo Liliana', acc: 'mkt',
+          drawer: 'Responsable de la operación comercial de Base Inmobiliaria: promoción, venta y renta de propiedades del Grupo. Pendiente de definir si este rol se crea como nuevo puesto o si el equipo actual de Liliana absorbe la función comercial con apoyo de este departamento.' },
+      ]
+    }
+  ];
+
+  // ── Pillars render
+  const pillarsEl = document.createElement('div');
+  pillarsEl.className = 'org-pillars';
+
+  pillars.forEach(p => {
+    const col = document.createElement('div');
+    col.className = 'org-pillar';
+    col.innerHTML = `
+      <div class="org-pillar-header" style="border-top: 2px solid ${p.color}">
+        <div class="org-pillar-num">${p.num}</div>
+        <div class="org-pillar-title">${p.title}</div>
+        <div class="org-pillar-sub">${p.sub}</div>
+      </div>`;
+    const body = document.createElement('div');
+    body.className = 'org-pillar-body';
+    p.nodes.forEach(n => body.appendChild(makeOrgNode(n.label, n.sub, n.acc, n.drawer)));
+    col.appendChild(body);
+    pillarsEl.appendChild(col);
+  });
+
+  root.appendChild(pillarsEl);
+
+  // ── Waldorf
+  const waldorf = document.createElement('div');
+  waldorf.className = 'org-waldorf-section';
+  const waldorfServices = ['Analista de Datos','Audiovisual','Community Manager','Coordinador de Contenidos','Copy','Creativo / Estratega','Desarrollo Web','Diseño Gráfico','Diseño UX / UI','Editorial','Especialista en Pauta','Fotógrafo / Videógrafo','Project Manager','Relaciones Públicas Digital','Research e Innovación','SEO / SEM'];
+  waldorf.innerHTML = `
+    <div class="org-waldorf-top">
+      <div class="org-waldorf-badge">Waldorf</div>
+      <div class="org-waldorf-desc">Proveedor externo estratégico · Iguala corporativa · 16 servicios</div>
+    </div>
+    <div class="org-waldorf-grid">${waldorfServices.map(s => `<div class="org-waldorf-chip">${s}</div>`).join('')}</div>`;
+  root.appendChild(waldorf);
+
+  // ── Verticales a las que se da servicio
+  const vertSection = document.createElement('div');
+  vertSection.className = 'org-verticales-section';
+  vertSection.innerHTML = `<div class="org-verticales-label">Verticales y departamentos que reciben servicio</div>`;
+  const vertGrid = document.createElement('div');
+  vertGrid.className = 'org-verticales-grid';
+
+  const verticales = [
+    { label: 'Grupo Educación', sub: 'Corporativo', active: true },
+    { label: 'Red Aprende', sub: 'Vertical educativa', active: true },
+    { label: 'Fundaju', sub: 'Fundación', active: true },
+    { label: 'Base Inmobiliaria', sub: 'Vertical · inactiva', active: false },
+    { label: 'Impacta Capital', sub: 'Vertical · inactiva', active: false },
+    { label: 'HABLA', sub: 'Congreso anual', active: true },
+    { label: 'Colegio Alerce', sub: 'Red Aprende · Hermosillo', active: true },
+    { label: "Colegio Albertson's", sub: 'Red Aprende · San Luis Potosí', active: true },
+    { label: 'Colegio Americano de San Carlos', sub: 'Red Aprende · Guaymas', active: true },
+    { label: 'Instituto Anglo Moderno', sub: 'Red Aprende · Mazatlán', active: true },
+    { label: 'Comunicación', sub: 'Depto. transversal', active: true },
+    { label: 'RSE', sub: 'Depto. transversal', active: true },
+    { label: 'Talento Humano', sub: 'Depto. transversal', active: true },
+    { label: 'TIC', sub: 'Depto. transversal', active: true },
+  ];
+
+  verticales.forEach(v => {
+    const chip = document.createElement('div');
+    chip.className = `org-vertical-chip ${v.active ? 'active' : 'inactive'}`;
+    chip.innerHTML = `${v.label}<span class="org-vertical-sub">${v.sub}</span>`;
+    vertGrid.appendChild(chip);
+  });
+
+  vertSection.appendChild(vertGrid);
+  root.appendChild(vertSection);
+
+  // ── Decisions note
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+
+// Channel index per flow: 0=Junta, 1=Correo, 2=WhatsApp
+const FLOW_CHANNEL = [0, 2, 1, 0]; // Brochure=Junta, Campaña=brief, Summit=Correo, Desarrollo=Junta
+
+const BUILDERS = [buildFlow0, buildFlow1, buildFlow2, buildFlow3];
+const started = [false, false, false, false];
+
+function startFlow(idx) {
+  if (started[idx]) return;
+  started[idx] = true;
+  document.getElementById(`btn-${idx}`).classList.add('hidden');
+  document.getElementById(`restart-${idx}`).style.display = 'inline-block';
+  BUILDERS[idx]();
+}
+
+function restartFlow(idx) {
+  started[idx] = false;
+  const flow = document.getElementById(`flow-${idx}`);
+  flow.innerHTML = '';
+  flow.classList.remove('visible');
+  const btn = document.getElementById(`btn-${idx}`);
+  btn.classList.remove('hidden');
+  document.getElementById(`restart-${idx}`).style.display = 'none';
+}
+
+// ─── ORGANIGRAMA INTEGRADO ────────────────────────────────────────────────────
+
+let orgIntegradoRendered = false;
+
+function renderOrgIntegrado() {
+  if (orgIntegradoRendered) return;
+  orgIntegradoRendered = true;
+
+  const root = document.getElementById('org-integrado-root');
+  root.style.cssText = 'padding:48px 40px 80px; width:100%; max-width:960px;';
+
+  root.innerHTML = `
+    <div class="org-intro">
+      <div class="org-intro-label">Escenario de largo plazo</div>
+      <div class="org-intro-title">Organigrama integrado: operación 100% interna</div>
+      <div class="org-intro-note">Todos los servicios que hoy presta Waldorf se distribuyen en los departamentos internos. Los puestos marcados como <span style="color:var(--green);font-weight:500;">NUEVO</span> no existen hoy. Haz clic en cualquier nodo para ver descripción y costo.</div>
+    </div>
+    <div class="org-legend">
+      <div class="org-legend-item"><div class="org-legend-dot ld-dir"></div>Dirección</div>
+      <div class="org-legend-item"><div class="org-legend-dot ld-int"></div>Comunicación</div>
+      <div class="org-legend-item"><div class="org-legend-dot ld-mkt"></div>Marketing y Ventas</div>
+      <div class="org-legend-item"><div class="org-legend-dot ld-field"></div>Campo — Colegios</div>
+      <div class="org-legend-item"><div class="org-legend-dot ld-ext"></div>Tecnología y Plataformas</div>
+    </div>`;
+
+  root.innerHTML += `
+    <div class="org-director-wrap">
+      <div class="org-director-node">
+        <div class="org-director-label">Director de Impacto y Comunicación</div>
+        <div class="org-director-sub">Misma dirección · Reporta a Co-Dirección</div>
+      </div>
+    </div>
+    <div class="org-connector-v"></div>`;
+
+  const connRow = document.createElement('div');
+  connRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;position:relative;';
+  const hbar = document.createElement('div');
+  hbar.style.cssText = 'position:absolute;top:0;left:12.5%;right:12.5%;height:1px;background:var(--border);';
+  connRow.appendChild(hbar);
+  for (let i = 0; i < 4; i++) {
+    const tick = document.createElement('div');
+    tick.className = 'org-pillar-connector';
+    connRow.appendChild(tick);
+  }
+  root.appendChild(connRow);
+
+  // ── PILLAR DATA ──────────────────────────────────────────────────────────────
+  const pillars = [
+    {
+      num: '01', title: 'Comunicación',
+      sub: 'Producción, contenido, PR y campo',
+      color: 'var(--accent-com)',
+      nodes: [
+        { label: 'Director de Arte', sub: 'Fijo · existente', acc: 'int', isNew: false,
+          drawer: 'Supervisa toda la producción visual. Valida entregables de diseño, audiovisual y campaña. Coordina con Tecnología y Plataformas.',
+          salary: null, refs: [] },
+        { label: 'Diseñador Gráfico Sr.', sub: 'Nuevo · campañas y sistemas de marca', acc: 'int', isNew: true,
+          drawer: 'Producción de piezas de campaña y materiales institucionales. Mantiene sistemas de marca de todas las verticales. Reporta al Director de Arte.',
+          salary: '$28,000', refs: [
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/dise%C3%B1ador-gr%C3%A1fico/salaries' },
+            { label: 'Coderhouse 2026', url: 'https://www.coderhouse.com/es/sueldos/sueldo-disenador-ux-ui-mexico-2025' }
+          ]},
+        { label: 'Diseñador Gráfico Jr.', sub: 'Fijo · existente', acc: 'int', isNew: false,
+          drawer: 'Materiales del día a día: comunicados, hojas membretadas, flyers, anuncios.',
+          salary: null, refs: [] },
+        { label: 'Editor Audiovisual', sub: 'Nuevo · video institucional y social', acc: 'int', isNew: true,
+          drawer: 'Edita todo el material de video del Grupo: reels, video institucional, coberturas, testimoniales.',
+          salary: '$32,000', refs: [
+            { label: 'Socialancer 2026', url: 'https://www.socialancer.com/editor-de-video-sueldo/' },
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/editor-de-video/salaries' }
+          ]},
+        { label: 'Fotógrafo / Videógrafo', sub: 'Nuevo · captura en campo y estudio', acc: 'int', isNew: true,
+          drawer: 'Cobertura de eventos corporativos y shoots de campaña. Viaja a sedes según calendario editorial.',
+          salary: '$22,000', refs: [
+            { label: 'Jobted MX 2026', url: 'https://www.jobted.com.mx/salario/editor-de-video' },
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/editor-de-video/salaries' }
+          ]},
+        { label: 'Coordinador Editorial', sub: 'Nuevo · parrilla y estrategia de contenido', acc: 'int', isNew: true,
+          drawer: 'Planea y gestiona la parrilla de contenidos de todas las plataformas. Define ejes temáticos y calendarios. Coordina a redactores y community managers.',
+          salary: '$28,000', refs: [
+            { label: 'Indeed MX redactor', url: 'https://mx.indeed.com/career/redactor/salaries' },
+            { label: 'Cocktail Marketing', url: 'https://cocktailmarketing.com.mx/sueldos-marketing-digital-mexico/' }
+          ]},
+        { label: 'Redactor / Editor Sr.', sub: 'Nuevo · contenido largo y editorial', acc: 'int', isNew: true,
+          drawer: 'Produce y edita contenidos extensos: blogs, reportes RSE, introducciones editoriales, boletines, textos institucionales.',
+          salary: '$22,000', refs: [
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/redactor/salaries' },
+            { label: 'Jooble MX', url: 'https://mx.jooble.org/salary/redactor' }
+          ]},
+        { label: 'Copywriter', sub: 'Nuevo · copy creativo y de campaña', acc: 'int', isNew: true,
+          drawer: 'Copy para campañas, sitios web, ads, redes y CTAs. Textos cortos de alto impacto.',
+          salary: '$22,000', refs: [
+            { label: 'Talent.com MX', url: 'https://mx.talent.com/salary?job=copy+jr' },
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/redactor/salaries' }
+          ]},
+        { label: 'Especialista en PR Digital', sub: 'Nuevo · medios, alianzas y reputación', acc: 'int', isNew: true,
+          drawer: 'Gestiona relaciones con medios, posicionamiento público de los líderes del Grupo y alianzas estratégicas.',
+          salary: '$32,000', refs: [
+            { label: 'Talent.com MX', url: 'https://mx.talent.com/salary?job=Publicista' },
+            { label: 'Cocktail Marketing', url: 'https://cocktailmarketing.com.mx/sueldos-marketing-digital-mexico/' }
+          ]},
+        { label: "Gestor Contenido y Comunidad · Albertson's", sub: 'Campo · San Luis Potosí, SLP', acc: 'field', isNew: true,
+          drawer: 'Misma función. Prioridad: el colegio no tiene sitio web activo.',
+          salary: '$18,000', refs: [
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/community-manager/salaries' },
+            { label: 'Talent.com MX', url: 'https://mx.talent.com/salary?job=community+manager' }
+          ]},
+      ]
+    },
+    {
+      num: '02', title: 'Marketing',
+      sub: 'Pauta, estrategia digital y comunidad',
+      color: 'var(--canal)',
+      nodes: [
+        { label: 'Performance Manager', sub: 'Nuevo · pauta de todo el Grupo', acc: 'mkt', isNew: false,
+          drawer: 'Gestiona y optimiza todas las campañas pagadas del Grupo. Responsable del presupuesto de medios y ROI de pauta.',
+          salary: '$50,000', refs: [
+            { label: 'Glassdoor MX 2026', url: 'https://www.glassdoor.com/Salaries/mexico-performance-marketing-specialist-salary-SRCH_IL.0,6_IN169_KO7,39.htm' },
+            { label: 'UNIR México', url: 'https://mexico.unir.net/noticias/comunicacion-mercadotecnia/cuanto-gana-especialista-marketing-digital/' }
+          ]},
+        { label: 'Creativo / Estratega', sub: 'Nuevo · conceptualización de campañas', acc: 'mkt', isNew: true,
+          drawer: 'Define el concepto creativo y la estrategia de cada campaña. Coordina con Coordinador Editorial y Performance Manager.',
+          salary: '$38,000', refs: [
+            { label: 'Cocktail Marketing', url: 'https://cocktailmarketing.com.mx/sueldos-marketing-digital-mexico/' },
+            { label: 'Glassdoor MX', url: 'https://www.glassdoor.com/Salaries/mexico-marketing-manager-salary-SRCH_IL.0,6_IN169_KO7,24.htm' }
+          ]},
+        { label: 'Especialista en Marketing Digital', sub: 'Nuevo · estrategia digital y email', acc: 'mkt', isNew: true,
+          drawer: 'Gestiona la estrategia digital de las verticales: SEO/SEM, email marketing, calendarios de contenido.',
+          salary: '$40,000', refs: [
+            { label: 'UNIR México 2026', url: 'https://mexico.unir.net/noticias/comunicacion-mercadotecnia/cuanto-gana-especialista-marketing-digital/' },
+            { label: 'Coderhouse 2026', url: 'https://www.coderhouse.com/us/sueldos/sueldo-especialista-marketing-digital-mexico-2025' }
+          ]},
+        { label: 'Community Manager', sub: 'Nuevo · redes sociales corporativas', acc: 'mkt', isNew: true,
+          drawer: 'Gestiona las redes sociales de todas las verticales corporativas. Publica según calendario del Coordinador Editorial.',
+          salary: '$22,000', refs: [
+            { label: 'Coderhouse 2026', url: 'https://www.coderhouse.com/en/sueldos/sueldo-community-manager-mexico-2025' },
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/community-manager/salaries' }
+          ]},
+        { label: 'Gestor Contenido y Comunidad · Alerce', sub: 'Campo · Hermosillo, Sonora', acc: 'field', isNew: false,
+          drawer: 'Documenta el día a día del colegio. Genera contenido auténtico. Apoya admisiones locales.',
+          salary: '$18,000', refs: [
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/community-manager/salaries' },
+            { label: 'Talent.com MX', url: 'https://mx.talent.com/salary?job=community+manager' }
+          ]},
+        { label: "Gestor Contenido y Comunidad · Albertson's", sub: 'Campo · San Luis Potosí, SLP', acc: 'field', isNew: false,
+          drawer: 'Misma función. Prioridad: el colegio no tiene sitio web activo.',
+          salary: '$18,000', refs: [
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/community-manager/salaries' },
+            { label: 'Talent.com MX', url: 'https://mx.talent.com/salary?job=community+manager' }
+          ]},
+        { label: 'Gestor Contenido y Comunidad · Anglo Moderno', sub: 'Campo · Mazatlán, Sinaloa', acc: 'field', isNew: false,
+          drawer: 'Misma función. Evaluar perfil interno reconvertible.',
+          salary: '$18,000', refs: [
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/community-manager/salaries' },
+            { label: 'Talent.com MX', url: 'https://mx.talent.com/salary?job=community+manager' }
+          ]},
+        { label: 'Gestor Contenido y Comunidad · Americano San Carlos', sub: 'Campo · Guaymas, Sonora', acc: 'field', isNew: false,
+          drawer: 'Misma función. Alta autonomía operativa requerida.',
+          salary: '$18,000', refs: [
+            { label: 'Indeed MX', url: 'https://mx.indeed.com/career/community-manager/salaries' },
+            { label: 'Talent.com MX', url: 'https://mx.talent.com/salary?job=community+manager' }
+          ]},
+        { label: 'Especialista en Email Marketing', sub: 'Nuevo · automatización y CRM', acc: 'mkt', isNew: true,
+          drawer: 'Diseña y ejecuta campañas de email para todas las verticales. Gestiona flujos de automatización en Salesforce.',
+          salary: '$25,000', refs: [
+            { label: 'Talent.com MX', url: 'https://mx.talent.com/salary?job=email+marketing' },
+            { label: 'Cocktail Marketing', url: 'https://cocktailmarketing.com.mx/sueldos-marketing-digital-mexico/' }
+          ]},
+        { label: 'Project Manager', sub: 'Nuevo · coordinación de proyectos', acc: 'mkt', isNew: true,
+          drawer: 'Coordina proyectos transversales. Gestiona tiempos, briefs y entregables entre departamentos.',
+          salary: '$45,000', refs: [
+            { label: 'Aprender21 MX 2026', url: 'https://www.aprender21.mx/blog/salario-project-manager' },
+            { label: 'Coursera / PMI LATAM', url: 'https://www.coursera.org/mx/articles/project-manager-salary' }
+          ]},
+      ]
+    },
+    {
+      num: '03', title: 'Ventas',
+      sub: 'Gerentes comerciales por vertical &nbsp;<span style="color:var(--green);font-size:9px;">· NUEVO</span>',
+      color: 'var(--accent-ra)',
+      nodes: [
+        { label: 'Gerente Comercial Red Aprende', sub: 'Nuevo · colegios, leads y Salesforce', acc: 'mkt', isNew: false,
+          drawer: 'Gestiona admisiones de los cuatro colegios. Recibe leads desde Salesforce, los asigna a asesores de cada plantel y da seguimiento completo.',
+          salary: '$38,000', refs: [
+            { label: 'Michael Page MX', url: 'https://www.michaelpage.com.mx/salary-comparison-tool/gerente-de-marketing-salarios' },
+            { label: 'Glassdoor MX', url: 'https://www.glassdoor.com/Salaries/mexico-marketing-manager-salary-SRCH_IL.0,6_IN169_KO7,24.htm' }
+          ]},
+        { label: 'Gerente Comercial HABLA', sub: 'Nuevo · patrocinios, alianzas y boletos', acc: 'mkt', isNew: false,
+          drawer: 'Responsable de los ingresos de HABLA: patrocinios a marcas, alianzas de largo plazo y boletos corporativos para foros del año.',
+          salary: '$45,000', refs: [
+            { label: 'Michael Page MX', url: 'https://www.michaelpage.com.mx/salary-comparison-tool/gerente-de-marketing-salarios' },
+            { label: 'Glassdoor MX', url: 'https://www.glassdoor.com/Salaries/mexico-marketing-manager-salary-SRCH_IL.0,6_IN169_KO7,24.htm' }
+          ]},
+        { label: 'Gerente Comercial Fundaju', sub: 'Nuevo · donativos, aliados y becas', acc: 'mkt', isNew: false,
+          drawer: 'Cultiva relaciones con donadores e instituciones, gestiona alianzas y coordina becas. Desarrollo institucional de largo plazo.',
+          salary: '$38,000', refs: [
+            { label: 'Michael Page MX', url: 'https://www.michaelpage.com.mx/salary-comparison-tool/gerente-de-marketing-salarios' },
+            { label: 'Glassdoor MX', url: 'https://www.glassdoor.com/Salaries/mexico-marketing-manager-salary-SRCH_IL.0,6_IN169_KO7,24.htm' }
+          ]},
+        { label: 'Gerente Comercial Base Inmobiliaria', sub: 'Existente · venta y renta de inmuebles', acc: 'mkt', isNew: false,
+          drawer: 'Responsable de la operación comercial de Base Inmobiliaria. Pendiente de definir vs. equipo Liliana.',
+          salary: null, refs: []},
+      ]
+    },
+    {
+      num: '04', title: 'Tecnología y Plataformas',
+      sub: 'Reporte dual: Dir. Impacto y Com. + Dir. TIC',
+      color: 'var(--accent-tic)',
+      nodes: [
+        { label: 'Desarrollador Full Stack Sr.', sub: 'Nuevo · sitios web y plataformas', acc: 'ext', isNew: true,
+          drawer: 'Desarrolla y mantiene todos los sitios web del Grupo. Full stack con experiencia en WordPress, Drupal y desarrollo a medida. Reporta al Director de Impacto y Comunicación; coordina infraestructura con TIC.',
+          salary: '$60,000', refs: [
+            { label: 'Coderhouse 2026', url: 'https://www.coderhouse.com/es/sueldos/sueldo-desarrollador-full-stack-mexico-2025' },
+            { label: 'Jobted MX 2026', url: 'https://www.jobted.com.mx/salario/full-stack-developer' }
+          ]},
+        { label: 'Diseñador UX / UI', sub: 'Nuevo · experiencia y design systems', acc: 'ext', isNew: true,
+          drawer: 'Diseña la experiencia digital de todas las plataformas. Crea y mantiene design systems por vertical. Trabaja en dupla con el Desarrollador Full Stack.',
+          salary: '$45,000', refs: [
+            { label: 'Coderhouse 2026', url: 'https://www.coderhouse.com/us/sueldos/sueldo-disenador-ux-ui-mexico-2025' },
+            { label: 'Glassdoor MX', url: 'https://www.glassdoor.com.mx/Sueldos/ux-designer-sueldo-SRCH_KO0,11.htm' }
+          ]},
+        { label: 'Especialista SEO / SEM', sub: 'Nuevo · posicionamiento orgánico y técnico', acc: 'ext', isNew: true,
+          drawer: 'Gestiona el posicionamiento orgánico de todos los sitios. Da lineamientos técnicos al Desarrollador. Coordina con Marketing Digital en estrategia de palabras clave.',
+          salary: '$35,000', refs: [
+            { label: 'Coderhouse 2026', url: 'https://www.coderhouse.com/us/sueldos/sueldo-especialista-marketing-digital-mexico-2025' },
+            { label: 'Cocktail Marketing', url: 'https://cocktailmarketing.com.mx/sueldos-marketing-digital-mexico/' }
+          ]},
+      ]
+    }
+  ];
+
+  const pillarsEl = document.createElement('div');
+  pillarsEl.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:28px;';
+
+  pillars.forEach(p => {
+    const col = document.createElement('div');
+    col.className = 'org-pillar';
+    col.innerHTML = `
+      <div class="org-pillar-header" style="border-top:2px solid ${p.color}">
+        <div class="org-pillar-num">${p.num}</div>
+        <div class="org-pillar-title">${p.title}</div>
+        <div class="org-pillar-sub">${p.sub}</div>
+      </div>`;
+    const body = document.createElement('div');
+    body.className = 'org-pillar-body';
+    p.nodes.forEach(n => body.appendChild(makeOrgNodeIntegrado(n.label, n.sub, n.acc, n.drawer, n.isNew, n.salary, n.refs)));
+    col.appendChild(body);
+    pillarsEl.appendChild(col);
+  });
+  root.appendChild(pillarsEl);
+
+  // TIC note
+  const ticNote = document.createElement('div');
+  ticNote.style.cssText = 'margin-bottom:28px;font-size:10px;color:#555;line-height:1.7;border-left:2px solid var(--accent-tic);padding-left:12px;';
+  ticNote.innerHTML = `<span style="color:var(--accent-tic);letter-spacing:.1em;text-transform:uppercase;font-size:9px;">Tecnología y Plataformas — doble reporte</span><br>
+    Reporta operativamente al Director de Impacto y Comunicación para brief, prioridades y entregables. Coordina con la Dirección de TIC en infraestructura, servidores, accesos y seguridad.`;
+  root.appendChild(ticNote);
+
+  // ── COSTO TOTAL ──────────────────────────────────────────────────────────────
+  const costoEl = document.createElement('div');
+  costoEl.style.cssText = 'border:1px solid #2a2a2a;background:#0a0a0a;padding:20px 24px;';
+  costoEl.innerHTML = `
+    <div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Estimación de costo total — puestos nuevos · mercado 2026</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div style="border:1px solid #1e1e1e;padding:12px 14px;">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Comunicación</div>
+        <div style="font-size:10px;color:var(--text);">11 puestos nuevos</div>
+        <div style="font-size:13px;color:var(--accent-com);font-family:'Fraunces',serif;font-weight:600;margin-top:4px;">$246,000 /mes</div>
+        <div style="font-size:9px;color:#555;margin-top:2px;">brutos · sin costo patronal</div>
+      </div>
+      <div style="border:1px solid #1e1e1e;padding:12px 14px;">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Marketing</div>
+        <div style="font-size:10px;color:var(--text);">6 puestos nuevos</div>
+        <div style="font-size:13px;color:var(--canal);font-family:'Fraunces',serif;font-weight:600;margin-top:4px;">$220,000 /mes</div>
+        <div style="font-size:9px;color:#555;margin-top:2px;">brutos · sin costo patronal</div>
+      </div>
+      <div style="border:1px solid #1e1e1e;padding:12px 14px;">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Ventas</div>
+        <div style="font-size:10px;color:var(--text);">4 puestos nuevos</div>
+        <div style="font-size:13px;color:var(--accent-ra);font-family:'Fraunces',serif;font-weight:600;margin-top:4px;">$161,000 /mes</div>
+        <div style="font-size:9px;color:#555;margin-top:2px;">brutos · sin costo patronal</div>
+      </div>
+      <div style="border:1px solid #1e1e1e;padding:12px 14px;">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Tecnología</div>
+        <div style="font-size:10px;color:var(--text);">3 puestos nuevos</div>
+        <div style="font-size:13px;color:var(--accent-tic);font-family:'Fraunces',serif;font-weight:600;margin-top:4px;">$140,000 /mes</div>
+        <div style="font-size:9px;color:#555;margin-top:2px;">brutos · sin costo patronal</div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid #1e1e1e;padding-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+      <div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Salarios brutos totales</div>
+        <div style="font-size:16px;color:var(--text);font-family:'Fraunces',serif;font-weight:600;">$767,000 <span style="font-size:11px;font-weight:300;">/mes</span></div>
+        <div style="font-size:9px;color:#555;margin-top:2px;">24 puestos nuevos · ~$9,204,000/año</div>
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Salarios brutos + costo patronal 35% (×1.35)</div>
+        <div style="font-size:16px;color:var(--text);font-family:'Fraunces',serif;font-weight:600;">$1,035,000 <span style="font-size:11px;font-weight:300;">/mes</span></div>
+        <div style="font-size:9px;color:#555;margin-top:2px;">IMSS, INFONAVIT, aguinaldo, prima vacacional · ~$12,420,000/año</div>
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">GMM colectivo (~$2,500/empleado)</div>
+        <div style="font-size:16px;color:var(--text);font-family:'Fraunces',serif;font-weight:600;">$60,000 <span style="font-size:11px;font-weight:300;">/mes</span></div>
+        <div style="font-size:9px;color:#555;margin-top:2px;">Seguro de Gastos Médicos Mayores · póliza grupal · ~$720,000/año<br>
+          <a href="https://www.eluniversal.com.mx/cartera/precios-de-seguros-medicos-se-disparan-en-el-inicio-de-2026/" target="_blank" style="color:#555;text-decoration:underline;text-decoration-style:dotted;">El Universal 2026 — incrementos GMM</a> ·
+          <a href="https://segurointeligente.mx/blog/cuanto-cuesta-un-seguro-de-gastos-medicos-mayores/" target="_blank" style="color:#555;text-decoration:underline;text-decoration-style:dotted;">SeguroInteligente.mx</a>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid #2a2a2a;margin-top:14px;padding-top:14px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Costo total mensual estimado</div>
+        <div style="font-size:22px;color:var(--green);font-family:'Fraunces',serif;font-weight:600;">$1,095,000 MXN</div>
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Costo total anual estimado</div>
+        <div style="font-size:22px;color:var(--green);font-family:'Fraunces',serif;font-weight:600;">$13,140,000 MXN</div>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:9px;color:#444;line-height:1.8;margin-top:4px;">
+          Sin incluir: equipamiento (laptops, cámaras, equipo de video), software y licencias, reclutamiento y onboarding, curva de aprendizaje, PTU, ni vales de despensa/transporte.<br>
+        </div>
+      </div>
+    </div>`;
+  root.appendChild(costoEl);
+}
+
+// Auto-render organigrama actual on load (default tab)
+document.addEventListener('DOMContentLoaded', () => renderOrgActual());
+</script>
+</body>
+</html>
